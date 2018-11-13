@@ -13,6 +13,24 @@ from copy import deepcopy
 
 ANIRES = 100
 
+def vectorTransformation (vertices, dp) :
+	vertices1[:] = vertices
+	for i in range(len(vertices)) :
+		vertices1[i] += dp
+	return vertices1
+
+def matrixTransformation (vertices, M) :
+	vertices1[:] = vertices
+	for i in range(len(vertices)) :
+		vertices1[i] = np.dot(M, vertices1[i])
+	return vertices1
+
+def linearTransition (vertices1, vertices2, k) :
+	vertices3[:] = vertices1
+	for i in range(len(vertices1)) :
+		vertices3[i] = (1-k)*vertices1[i] + k*shape1.vertices2[i]
+	return vertices3
+
 
 class Shape:
 	def __init__(self, vertices = [], edges = []):
@@ -20,7 +38,7 @@ class Shape:
 		self.edges = np.array(edges)
 	
 
-	def update (self) :
+	def graphicUpdate (self) :
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 		draw(sbX)
 		draw(sbY)
@@ -29,24 +47,6 @@ class Shape:
 		pygame.display.flip()
 		pygame.time.wait(10)
 
-	
-	def vectorTransformation (self, dp) :
-		shape1 = deepcopy(self)
-		for i in range(len(self.vertices)) :
-			shape1.vertices[i] += dp
-		return shape1
-	
-	def matrixTransformation (self, M) :
-		shape1 = deepcopy(self)
-		for i in range(len(self.vertices)) :
-			shape1.vertices[i] = np.dot(M, self.vertices[i])
-		return shape1
-	
-	def linearTransition (self, shape1, k) :
-		shape2 = deepcopy(self)
-		for i in range(len(self.vertices)) :
-			shape2.vertices[i] = (1-k)*self.vertices[i] + k*shape1.vertices[i]
-		return shape2
 
 	def translate (self, inp):
 		if len(inp) == 4 :	
@@ -60,18 +60,17 @@ class Shape:
 		d = np.array([dx, dy, dz])
 		dp = d/ANIRES
 		for i in range(ANIRES) :
-			self = self.vectorTransformation(dp)
+			self.vertices[:] = vectorTransformation(self.vertices,dp)
 			self.update()
-		print(self.vertices)
 
 	def dilate (self, inp):
 		k = float(inp[1])
 		kp = math.pow(k,1/ANIRES)
 		Mp = np.array([[kp, 0.0, 0.0], [0.0, kp, 0.0], [0.0, 0.0, kp]])
-		shape1 = deepcopy(self)
-		shape2 = self.matrixTransformation(Mp)
+		vertices1[:] = self.vertices
+		vertices2[:] = matrixTransformation(self.vertices,Mp)
 		for i in range(ANIRES) :
-			self = shape1.linearTransition(shape2,i*1.0/ANIRES)
+			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 		
 	def rotate (self, inp) :
@@ -85,24 +84,24 @@ class Shape:
 		elif vektor == 'x':
 			Mp = np.array([[1.0 ,0.0, 0.0], [0.0, math.cos(tp), -math.sin(tp)], [0.0, math.sin(tp), math.cos(tp)]])
 		for i in range(ANIRES) :
-			self.matrixTransformation(Mp)
+			self.vertices[:] = matrixTransformation(self.vertices,Mp)
 			self.update()
 	
 	def reflect (self, inp) :
 		param = inp[1]
-		shape1 = deepcopy(self)
+		vertices1[:] = self.vertices
 		if param == "x" :
 			Mp = np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]])
-			shape2 = self.matrixTransformation(Mp)
+			vertices2[:] = matrixTransformation(self.vertices,Mp)
 		elif param == "y" :
 			Mp = np.array([[-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
-			shape2 = self.matrixTransformation(Mp)
+			vertices2[:] = matrixTransformation(self.vertices,Mp)
 		elif param == "y=x" :
 			Mp = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
-			shape2 = self.matrixTransformation(Mp)
+			vertices2[:] = matrixTransformation(self.vertices,Mp)
 		elif param == "y=-x" :
 			Mp = np.array([[0.0, -1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
-			shape2 = self.matrixTransformation(Mp)
+			vertices2[:] = matrixTransformation(self.vertices,Mp)
 		else :
 			a = param.split(",")
 			x = a[0].split("(")
@@ -111,40 +110,40 @@ class Shape:
 			q = float(y[0])
 			d = [p, q, 0.0]
 			Mp = np.array([-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0])
-			shape2 = self.vectorTransformation(-d)
-			shape2 = shape2.matrixTransformation(Mp)
-			shape2 = shape2.vectorTransformation(d)
+			vertices2[:] = vectorTransformation(self.vertices,-d)
+			vertices2[:] = matrixTransformation(self.vertices,Mp)
+			vertices2[:] = vectorTransformation(self.vertices,d)
 		for i in range(ANIRES) :
-			self = self.linearTransition(shape2,i*1.0/ANIRES)
+			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 		
 	
 	def stretch (self, inp) :
 		param = inp[1]
 		k = float(inp[2])
-		shape1 = deepcopy(self)
+		vertices1[:] = self.vertices
 		if param == "x" :
 			Mp = np.array([[k, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 		elif param == "y" :
 			Mp = np.array([[1.0, 0.0, 0.0], [0.0, k, 0.0], [0.0, 0.0, 1.0]])
 		elif param == "z" :
 			Mp = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, k]])
-		shape2 = self.matrixTransformation(Mp)
+		vertices2[:] = matrixTransformation(self.vertices,Mp)
 		for i in range(ANIRES) :
-			self = shape1.linearTransition(shape2,i*1.0/ANIRES)
+			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 	
-	def costum (self, inp) :
+	def custom (self, inp) :
 		param = inp[1]
 		a = float(inp[2])
 		b = float(inp[3])
 		c = float(inp[4])
 		d = float(inp[5])
-		shape1 = deepcopy(self)
+		vertices1[:] = self.vertices
 		Mp = np.array([[a, b, 0.0], [c, d, 0.0], [0.0, 0.0, 1.0]])
-		shape2 = matrixTransformation(shape1,Mp)
+		vertices2[:] = matrixTransformation(self.vertices,Mp)
 		for i in range(ANIRES) :
-			self = shape1.linearTransition(shape2, i*1.0/ANIRES)
+			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 
 
@@ -259,8 +258,6 @@ def main():
 			elif (inp[0] == 'exit'):
 				pygame.quit()
 				quit()
-			print(main_object.vertices)
-			main_object.update()
 
 			"""
 			while True:
