@@ -60,43 +60,49 @@ class Shape:
 		d = np.array([dx, dy, dz])
 		dp = d/ANIRES
 		for i in range(ANIRES) :
-			self = vectorTransformation(self,dp)
-			update(self)
+			self = self.vectorTransformation(dp)
+			self.update()
+		print(self.vertices)
 
-	'''
 	def dilate (self, inp):
 		k = float(inp[1])
 		kp = math.pow(k,1/ANIRES)
 		Mp = np.array([[kp, 0.0, 0.0], [0.0, kp, 0.0], [0.0, 0.0, kp]])
 		shape1 = deepcopy(self)
-		shape2 = matrixTransformation(self,Mp)
+		shape2 = self.matrixTransformation(Mp)
 		for i in range(ANIRES) :
-			self = linearTransition(shape1,shape2,i*1.0/ANIRES)
-			update(self)
+			self = shape1.linearTransition(shape2,i*1.0/ANIRES)
+			self.update()
 		
 	def rotate (self, inp) :
-		t = float(inp[1])
+		theta = float(inp[1])
+		vektor = str(inp[2])
 		tp = theta/ANIRES
-		Mp = np.array([math.cos(tp), -math.sin(tp), 0.0], [math.sin(tp), math.cos(tp), 0.0], [0.0, 0.0, 1.0])
+		if vektor == 'z':
+			Mp = np.array([[math.cos(tp), -math.sin(tp), 0.0], [math.sin(tp), math.cos(tp), 0.0], [0.0, 0.0, 1.0]])
+		elif vektor == 'y':
+			Mp = np.array([[math.cos(tp), 0.0, math.sin(tp)], [0.0, 1.0, 0.0], [-math.sin(tp), 0.0, math.cos(tp)]])
+		elif vektor == 'x':
+			Mp = np.array([[1.0 ,0.0, 0.0], [0.0, math.cos(tp), -math.sin(tp)], [0.0, math.sin(tp), math.cos(tp)]])
 		for i in range(ANIRES) :
-			matrixTransformation(self,Mp)
-			update(self)
+			self.matrixTransformation(Mp)
+			self.update()
 	
 	def reflect (self, inp) :
 		param = inp[1]
 		shape1 = deepcopy(self)
 		if param == "x" :
 			Mp = np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]])
-			shape2 = matrixTransformation(self,Mp)
+			shape2 = self.matrixTransformation(Mp)
 		elif param == "y" :
 			Mp = np.array([[-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
-			shape2 = matrixTransformation(self,Mp)
+			shape2 = self.matrixTransformation(Mp)
 		elif param == "y=x" :
 			Mp = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
-			shape2 = matrixTransformation(self,Mp)
+			shape2 = self.matrixTransformation(Mp)
 		elif param == "y=-x" :
 			Mp = np.array([[0.0, -1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
-			shape2 = matrixTransformation(self,Mp)
+			shape2 = self.matrixTransformation(Mp)
 		else :
 			a = param.split(",")
 			x = a[0].split("(")
@@ -105,12 +111,12 @@ class Shape:
 			q = float(y[0])
 			d = [p, q, 0.0]
 			Mp = np.array([-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0])
-			shape2 = vectorTransformation(self,-d)
-			shape2 = matrixTransformation(shape2,Mp)
-			shape2 = vectorTransformation(shape2,d)
+			shape2 = self.vectorTransformation(-d)
+			shape2 = shape2.matrixTransformation(Mp)
+			shape2 = shape2.vectorTransformation(d)
 		for i in range(ANIRES) :
-			self = linearTransition(shape1,shape2,i*1.0/ANIRES)
-			update(self)
+			self = self.linearTransition(shape2,i*1.0/ANIRES)
+			self.update()
 		
 	
 	def stretch (self, inp) :
@@ -123,10 +129,10 @@ class Shape:
 			Mp = np.array([[1.0, 0.0, 0.0], [0.0, k, 0.0], [0.0, 0.0, 1.0]])
 		elif param == "z" :
 			Mp = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, k]])
-		shape2 = matrixTransformation(self,Mp)
+		shape2 = self.matrixTransformation(Mp)
 		for i in range(ANIRES) :
-			self = linearTransition(shape1,shape2,i*1.0/ANIRES)
-			update(self)
+			self = shape1.linearTransition(shape2,i*1.0/ANIRES)
+			self.update()
 	
 	def costum (self, inp) :
 		param = inp[1]
@@ -138,10 +144,8 @@ class Shape:
 		Mp = np.array([[a, b, 0.0], [c, d, 0.0], [0.0, 0.0, 1.0]])
 		shape2 = matrixTransformation(shape1,Mp)
 		for i in range(ANIRES) :
-			self = linearTransition(shape1, shape2, i*1.0/ANIRES)
-			update(self)
-	'''
-
+			self = shape1.linearTransition(shape2, i*1.0/ANIRES)
+			self.update()
 
 
 def initiate():
@@ -158,6 +162,8 @@ def initiate():
 	print("Bentuk apakah yang ingin anda tampilkan?")
 	print("1. Kubus (3D)")
 	print("2. Persegi (2D)")
+	print("3. Custom (2D)")
+
 
 	inp = int(input())
 	if (inp == 1):
@@ -168,7 +174,32 @@ def initiate():
 	elif (inp == 2):
 		main_object = Shape([[5.0, 5.0, 0], [5.0, -5.0, 0], [-5.0, -5.0, 0], [-5.0, 5.0, 0]],
 							[[0,1], [1,2], [2, 3], [3,0]])
-
+	elif (inp == 3):
+		Vertices = []
+		Vertex = []
+		Edges = []
+		Edge = []
+		N = int(input("Masukkan N:"))
+		for i in range(N):
+			Vertex = []
+			Edge = []
+			inp = input().split(' ')
+			Vertex.append(float(inp[0]))
+			Vertex.append(float(inp[1]))
+			Vertex.append(0.0)
+			Vertices.append(Vertex)
+			Edge.append(i)
+			if i == (N-1) :
+				Edge.append(0)
+			else :
+				Edge.append(int(i+1))
+			Edges.append(Edge)
+			print(Edges)
+			print(Edge)
+			print(Vertices)
+			print(Vertex)
+		main_object = Shape(Vertices, Edges)
+	
 	return main_object
 		
 def draw(main_object = Shape()):
@@ -211,27 +242,34 @@ def main():
 			else:
 				pass
 		
-		if (event.type == ACTIVEEVENT and event.gain == 0):
+		if ((event.type == KEYDOWN) and (event.key == K_l) ):
 			inp = input().split(" ")
 			if (inp[0] == 'translate'):
 				main_object.translate(inp)
 			elif (inp[0] == 'dilate'):
 				main_object.dilate(inp)
+			elif (inp[0] == 'rotate'):
+				main_object.rotate(inp)
+			elif (inp[0] == 'reflect'):
+				main_object.reflect(inp)
+			elif (inp[0] == 'stretch'):
+				main_object.stretch(inp)	
+			elif (inp[0] == 'custom'):
+				main_object.custom(inp)	
 			elif (inp[0] == 'exit'):
 				pygame.quit()
 				quit()
+			print(main_object.vertices)
+			main_object.update()
 
+			"""
 			while True:
 				for event in pygame.event.get():
 					pass
 				if (event.type == ACTIVEEVENT and event.gain == 1):
 					break	
+			"""
 
-		draw(sbX)
-		draw(sbY)
-		draw(sbZ)
-		draw(main_object)
-		pygame.display.flip()
-		pygame.time.wait(5)
+		main_object.update()
 
 main()
