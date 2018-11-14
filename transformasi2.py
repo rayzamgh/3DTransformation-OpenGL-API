@@ -101,29 +101,104 @@ class Shape:
 		elif param == "y" :
 			Mp = np.array([[-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 			vertices2 = matrixTransformation(self.vertices,Mp)
-		elif param == "y=x" :
+		elif ((param == "y=x") or (param == "x=y")) :
 			Mp = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
 			vertices2 = matrixTransformation(self.vertices,Mp)
-		elif param == "y=-x" :
+		elif ((param == "y=-x") or (param == "x=-y")) :
 			Mp = np.array([[0.0, -1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
+			vertices2 = matrixTransformation(self.vertices,Mp)
+		elif ((param == "xy-plane") or (param == "xy-plane")) :
+			Mp = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, -1.0]])
+			vertices2 = matrixTransformation(self.vertices,Mp)
+		elif ((param == "xz-plane") or (param == "zx-plane")) :
+			Mp = np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]])
+			vertices2 = matrixTransformation(self.vertices,Mp)
+		elif ((param == "yz-plane") or (param == "zy-plane")) :
+			Mp = np.array([[-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 			vertices2 = matrixTransformation(self.vertices,Mp)
 		else :
 			a = param.split(",")
-			x = a[0].split("(")
-			y = a[1].split(")")
-			p = float(x[1])
-			q = float(y[0])
-			d = [p, q, 0.0]
-			di = [-p, -q, 0.0]
-			Mp = np.array([[-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]])
-			vertices2 = vectorTransformation(self.vertices,di)
-			vertices2 = matrixTransformation(vertices2,Mp)
-			vertices2 = vectorTransformation(vertices2,d)
+			if (len(a) == 2) :	
+				x = a[0].split("(")
+				y = a[1].split(")")
+				p = float(x[1])
+				q = float(y[0])
+				d = [p, q, 0.0]
+				di = [-p, -q, 0.0]
+				Mp = np.array([[-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]])
+				vertices2 = vectorTransformation(self.vertices,di)
+				vertices2 = matrixTransformation(vertices2,Mp)
+				vertices2 = vectorTransformation(vertices2,d)
+			elif (len(a) == 3) :
+				x = a[0].split("(")
+				y = a[1]
+				z = a[2].split(")")
+				p = float(x[1])
+				q = float(y)
+				r = float(z[0])
+				d = [p, q, r]
+				di = [-p, -q, -r]
+				Mp = np.array([[-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]])
+				vertices2 = vectorTransformation(self.vertices,di)
+				vertices2 = matrixTransformation(vertices2,Mp)
+				vertices2 = vectorTransformation(vertices2,d)
 		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 		
 	
+	def orthodonalProjection (self, inp) :
+		param = inp[1]
+		vertices1 = deepcopy(self.vertices)
+		if (param == "x-axis") :
+			Mp = np.array([[1.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		elif (param == "y-axis") :
+			Mp = np.array([[0.0, 0.0, 0.0],[0.0, 1.0, 0.0],[0.0, 0.0, 0.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		elif (param == "z-axis") :
+			Mp = np.array([[0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 1.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		elif ((param == "xy-plane") or (param == "yx-plane")) :
+			Mp = np.array([[1.0, 0.0, 0.0],[0.0, 1.0, 0.0],[0.0, 0.0, 0.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)	
+		elif ((param == "xz-plane") or (param == "zx-plane")) :
+			Mp = np.array([[1.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 1.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		elif ((param == "yz-plane") or (param == "zy-plane")) :
+			Mp = np.array([[0.0, 0.0, 0.0],[0.0, 1.0, 0.0],[0.0, 0.0, 1.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		for i in range(ANIRES + 1) :
+			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
+			self.update()
+
+	def shear (self, inp) :
+		k = float(inp[1])
+		param = inp[2]
+		vertices1 = deepcopy(self.vertices)
+		if (param == "y-x") :
+			Mp = np.array([[1.0, k, 0.0],[0.0, 1.0, 0.0],[0.0, 0.0, 1.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		elif (param == "z-x") :
+			Mp = np.array([[1.0, 0.0, k],[0.0, 1.0, 0.0],[0.0, 0.0, 1.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		elif (param == "x-y") :
+			Mp = np.array([[1.0, 0.0, 0.0],[k, 1.0, 0.0],[0.0, 0.0, 1.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		elif (param == "z-y") :
+			Mp = np.array([[1.0, 0.0, 0.0],[0.0, 1.0, k],[0.0, 0.0, 0.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		elif (param == "x-z") :
+			Mp = np.array([[1.0, 0.0, 0.0],[0.0, 1.0, 0.0],[k, 0.0, 1.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		elif (param == "y-z") :
+			Mp = np.array([[1.0, 0.0, 0.0],[0.0, 1.0, 0.0],[0.0, k, 1.0]])
+			vertices2 = matrixTransformation(self.vertices, Mp)
+		for i in range(ANIRES + 1) :
+			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
+			self.update()
+
+
 	def stretch (self, inp) :
 		param = inp[2]
 		k = float(inp[1])
@@ -234,6 +309,10 @@ def main():
 			main_object.stretch(inp)	
 		elif (inp[0] == 'custom'):
 			main_object.custom(inp)	
+		elif (inp[0] == 'projection'):
+			main_object.orthodonalProjection(inp)
+		elif (inp[0] == 'shear'):
+			main_object.shear(inp)
 		elif (inp[0] == 'exit'):
 			pygame.quit()
 			quit()
