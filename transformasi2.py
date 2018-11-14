@@ -404,8 +404,8 @@ def initiatePygame() :
 	pygame.display.set_caption("Tubes Algeo")
 	gluPerspective(45, (display[0]/display[1]), 0.1, 200.0)
 	glTranslatef(0.0, -3, -35.5)
-	glRotatef(45, 1, 1, 0)
-	glRotatef(15, -1, 0, 0)
+	#glRotatef(45, 1, 1, 0)
+	#glRotatef(15, -1, 0, 0)
 	pygameinit = True
 
 inp = []
@@ -457,11 +457,23 @@ def GUI() :
 			elif (inp[0] == 'dilate'):
 				main_object.dilate(inp)
 			elif (inp[0] == 'rotate'):
+				if len(inp) == 2 :
+					inp.append('z')
 				main_object.rotate(inp)
 			elif (inp[0] == 'reflect'):
 				main_object.reflect(inp)
 			elif (inp[0] == 'stretch'):
-				main_object.stretch(inp)	
+				main_object.stretch(inp)
+			elif (inp[0] == '3Dview'):
+				for i in range(30):
+					glRotatef(45/30, 1, 1, 0)
+					glRotatef(15/30, -1, 0, 0)
+					main_object.update()
+			elif (inp[0] == '2Dview'):
+				for i in range(30):
+					glRotatef(45/30, -1, -1, 0)
+					glRotatef(15/30, 1, 0, 0)
+					main_object.update()
 			elif (inp[0] == 'custom'):
 				main_object.custom(inp)	
 			elif (inp[0] == 'projection'):
