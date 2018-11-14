@@ -4,14 +4,15 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+import threading
 import numpy as np
-
 import math
 
 from copy import deepcopy
 
 
 ANIRES = 100
+pygameinit = False
 
 def vectorTransformation (vertices, dp) :
 	vertices1 = deepcopy(vertices)
@@ -47,11 +48,6 @@ class Shape:
 		pygame.display.flip()
 		pygame.time.wait(10)
 
-	def reset (self, vertices0) :
-		vertices1 = deepcopy(self.vertices)
-		for i in range(ANIRES + 1) :
-			self.vertices[:] = linearTransition(vertices1, vertices0, i*1.0/ANIRES)
-			self.update()
 
 	def translate (self, inp):
 		if len(inp) == 4 :	
@@ -132,8 +128,9 @@ class Shape:
 		for i in range(ANIRES) :
 			self.vertices[:] = vectorTransformation(self.vertices,di)
 			self.vertices[:] = matrixTransformation(self.vertices,Mp)
-			self.vertices[:] = vectorTransformation(self.vertices,d)
-			self.update()
+			self.vertices[:] = vectorTransformation(self.vertices,d)	
+			if (pygameinit) :	
+				self.update()
 
 	
 	def reflect (self, inp) :
@@ -242,6 +239,11 @@ class Shape:
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 
+	def reset(self, vertices0) :
+		vertices1 = deepcopy(self.vertices)
+		for i in range(ANIRES + 1) :
+			self.vertices[:] = linearTransition(vertices1,vertices0,i*1.0/ANIRES)
+			self.update()
 
 	def stretch (self, inp) :
 		param = inp[2]
@@ -271,27 +273,17 @@ class Shape:
 
 
 def initiate():
-	pygame.init()
-	display = (800, 600)
-	pygame.display.set_mode(display, DOUBLEBUF|OPENGL)
-	pygame.display.set_caption("Tubes Algeo")
-	gluPerspective(45, (display[0]/display[1]), 0.1, 200.0)
-	glTranslatef(0.0, -3, -35.5)
-	#glRotatef(45, 1, 1, 0)
-	#glRotatef(15, -1, 0, 0)
 	"""MENERIMA INPUT USER"""
 	print("Welcome to 3D transformation simulator!")
 	print("Bentuk apakah yang ingin anda tampilkan?")
 	print("1. Kubus (3D)")
 	print("2. Persegi (2D)")
 	print("3. Custom (2D)")
-	print("4. Custom (2D) Lingkaran")
-
+	print("4. Custom Lingkaran (2D)")
+	print("5. Custom Sphere (3D)")
 
 	inp = int(input())
 	if (inp == 1):
-		glRotatef(45, 1, 1, 0)
-		glRotatef(15, -1, 0, 0)
 		main_object = Shape([[5.0, -5.0, -5.0],	[5.0, 5.0, -5.0],	[-5.0, 5.0, -5.0], [-5.0, -5.0, -5.0], 
 							[5.0, -5.0, 5.0], [5.0, 5.0, 5.0], [-5.0, -5.0, 5.0], [-5.0, 5.0, 5.0]], 
 							[[0, 1], [0, 3], [0, 4], [2, 1], [2, 3], [2, 7],
@@ -304,7 +296,7 @@ def initiate():
 		Vertex = []
 		Edges = []
 		Edge = []
-		N = int(input("Masukkan N:"))
+		N = int(input("Masukkan N : "))
 		for i in range(N):
 			Vertex = []
 			Edge = []
@@ -319,16 +311,12 @@ def initiate():
 			else :
 				Edge.append(int(i+1))
 			Edges.append(Edge)
-			print(Edges)
-			print(Edge)
-			print(Vertices)
-			print(Vertex)
 		main_object = Shape(Vertices, Edges)
 	elif (inp == 4):
 		Vertices = []
 		Edges = []
 		Edge = []
-		R = int(input("Masukkan R:"))
+		R = int(input("Masukkan R : "))
 		initial = [R, 0, 0]
 		Vertices = [[R,0,0]]
 		fake_object = Shape([[R, 0.0, 0.0], [0.0,0.0,0.0]],[[0,1]])
@@ -346,9 +334,55 @@ def initiate():
 			Vertex.append(fake_object.vertices[0][2])
 			Vertices.append(Vertex) 
 			Edges.append(Edge)
-			print(Vertex)
-			print(Edge)
 		main_object = Shape(Vertices, Edges)
+	elif (inp == 5):
+		Vertices = []
+		Edges = []
+		Edge = []
+		R = int(input("Masukkan R : "))
+		initial = [R, 0, 0]
+		Vertices = [[R,0,0]]
+		fake_object = Shape([[R, 0.0, 0.0], [0.0,0.0,0.0]],[[0,1]])
+		for i in range(36) :
+			Edge = []
+			Vertex = []
+			Edge.append(i)
+			if i == (35) :
+				Edge.append(0)
+			else :
+				Edge.append(int(i+1))
+			fake_object.rotate(['rotate', 10 , 'z']) 
+			Vertex.append(fake_object.vertices[0][0])
+			Vertex.append(fake_object.vertices[0][1])
+			Vertex.append(fake_object.vertices[0][2])
+			Vertices.append(Vertex) 
+			Edges.append(Edge)
+		circle = Shape(Vertices, Edges)
+		Vertices = circle.vertices.tolist()
+		Edges = circle.edges.tolist()
+		for i in range(36) : 
+			circle.rotate(['rotate', 10, 'x'])
+			Vertices = Vertices + circle.vertices.tolist()
+			EdgesT = circle.edges.tolist()
+			for j in range(len(EdgesT)) :
+				for k in range(2) :
+					EdgesT[j][k] += i*36
+			Edges = Edges + EdgesT
+		for i in range(36) :
+			EdgesT = []
+			for j in range(36) :
+				Edge = []
+				if (i != 35) :	
+					Edge.append(j + i*36)
+					Edge.append(j + i*36 + 36)
+				else :
+					Edge.append(j + i*36)
+					Edge.append(j)
+				EdgesT.append(Edge)
+			Edges = Edges + EdgesT
+
+		main_object = Shape(Vertices, Edges)
+	
 	return main_object
 		
 def draw(main_object = Shape()):
@@ -362,37 +396,30 @@ sbX = Shape([[100.0, 0.0, 0.0],[-100.0, 0.0, 0.0]], [[0, 1]])
 sbY = Shape([[0.0, 100.0, 0.0],[0.0, -100.0, 0.0]], [[0, 1]])
 sbZ = Shape([[0.0, 0.0, 100.0],[0.0, 0.0, -100.0]], [[0, 1]])
 
-def main():
-	main_object = initiate()
-	main_object.update()
-	vertices0 = deepcopy(main_object.vertices)
+def initiatePygame() :
+	global pygameinit
+	pygame.init()
+	display = (800, 600)
+	pygame.display.set_mode(display, DOUBLEBUF|OPENGL)
+	pygame.display.set_caption("Tubes Algeo")
+	gluPerspective(45, (display[0]/display[1]), 0.1, 200.0)
+	glTranslatef(0.0, -3, -35.5)
+	glRotatef(45, 1, 1, 0)
+	glRotatef(15, -1, 0, 0)
+	pygameinit = True
+
+inp = []
+
+def Console() :
+	global inp
 	while True:
 		inp = input().split(" ")
-		if (inp[0] == 'translate'):
-			main_object.translate(inp)
-		elif (inp[0] == 'dilate'):
-			main_object.dilate(inp)
-		elif (inp[0] == 'rotate'):
-			if len(inp) == 2 :
-				inp.append('z')
-			main_object.rotate(inp)
-		elif (inp[0] == 'reflect'):
-			main_object.reflect(inp)
-		elif (inp[0] == 'stretch'):
-			main_object.stretch(inp)
-		elif (inp[0] == 'reset'):
-			main_object.reset(vertices0)		
-		elif (inp[0] == 'custom'):
-			main_object.custom(inp)	
-		elif (inp[0] == 'projection'):
-			main_object.orthodonalProjection(inp)
-		elif (inp[0] == 'shear'):
-			main_object.shear(inp)
-		elif (inp[0] == 'exit'):
-			pygame.quit()
-			quit()
 
-		"""
+def GUI() :
+	initiatePygame()
+	global inp
+	vertices0 = deepcopy(main_object.vertices) 
+	while True:
 		for event in pygame.event.get():
 			pass
 
@@ -409,16 +436,22 @@ def main():
 				glRotatef(1,-1,0, 0)
 			elif event.key == K_DOWN:
 				glRotatef(1,1,0, 0)
-			elif event.key == K_a:
+			elif event.key == K_q:
 				glRotatef(1,0,0, -1)
-			elif event.key == K_d:
+			elif event.key == K_e:
 				glRotatef(1,0,0, 1)
+			elif event.key == K_w:
+				glTranslatef(0, 0, 0.3)
+			elif event.key == K_s:
+				glTranslatef(0, 0, -0.3)
+			elif event.key == K_a:
+				glTranslatef(0.3, 0, 0)
+			elif event.key == K_d:
+				glTranslatef(-0.3, 0, 0)
 			else:
 				pass
-		
 			
-		if ((event.type == KEYDOWN) and (event.key == K_l) ):
-			inp = input().split(" ")
+		if (len(inp) != 0) :
 			if (inp[0] == 'translate'):
 				main_object.translate(inp)
 			elif (inp[0] == 'dilate'):
@@ -431,17 +464,26 @@ def main():
 				main_object.stretch(inp)	
 			elif (inp[0] == 'custom'):
 				main_object.custom(inp)	
+			elif (inp[0] == 'projection'):
+				main_object.orthodonalProjection(inp)
+			elif (inp[0] == 'shear'):
+				main_object.shear(inp)
+			elif (inp[0] == 'reset'):
+				main_object.reset(vertices0)
 			elif (inp[0] == 'exit'):
 				pygame.quit()
 				quit()
-		"""
-		"""
-			while True:
-				for event in pygame.event.get():
-					pass
-				if (event.type == ACTIVEEVENT and event.gain == 1):
-					break	
-		"""
-
+			inp = []
+		
 		main_object.update()
+
+def main():
+	global main_object
+	main_object = initiate()
+	gui = threading.Thread(target=GUI)
+	console = threading.Thread(target=Console)
+	gui.start()
+	console.start()
+		
+		
 main()
