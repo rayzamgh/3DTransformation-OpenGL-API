@@ -14,21 +14,21 @@ from copy import deepcopy
 ANIRES = 100
 
 def vectorTransformation (vertices, dp) :
-	vertices1[:] = vertices
+	vertices1 = deepcopy(vertices)
 	for i in range(len(vertices)) :
 		vertices1[i] += dp
 	return vertices1
 
 def matrixTransformation (vertices, M) :
-	vertices1[:] = vertices
+	vertices1 = deepcopy(vertices)
 	for i in range(len(vertices)) :
 		vertices1[i] = np.dot(M, vertices1[i])
 	return vertices1
 
 def linearTransition (vertices1, vertices2, k) :
-	vertices3[:] = vertices1
+	vertices3 = deepcopy(vertices1)
 	for i in range(len(vertices1)) :
-		vertices3[i] = (1-k)*vertices1[i] + k*shape1.vertices2[i]
+		vertices3[i] = (1-k)*vertices1[i] + k*vertices2[i]
 	return vertices3
 
 
@@ -38,7 +38,7 @@ class Shape:
 		self.edges = np.array(edges)
 	
 
-	def graphicUpdate (self) :
+	def update (self) :
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 		draw(sbX)
 		draw(sbY)
@@ -65,84 +65,89 @@ class Shape:
 
 	def dilate (self, inp):
 		k = float(inp[1])
-		kp = math.pow(k,1/ANIRES)
-		Mp = np.array([[kp, 0.0, 0.0], [0.0, kp, 0.0], [0.0, 0.0, kp]])
-		vertices1[:] = self.vertices
-		vertices2[:] = matrixTransformation(self.vertices,Mp)
-		for i in range(ANIRES) :
+		Mp = np.array([[k, 0.0, 0.0], [0.0, k, 0.0], [0.0, 0.0, k]])
+		vertices1 = deepcopy(self.vertices)
+		vertices2 = matrixTransformation(self.vertices,Mp)
+		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 		
 	def rotate (self, inp) :
-		theta = float(inp[1])
+		t = np.deg2rad(float(inp[1]))
 		vektor = str(inp[2])
-		tp = theta/ANIRES
+		tp = t/ANIRES
+		vertices1 = deepcopy(self.vertices)
 		if vektor == 'z':
 			Mp = np.array([[math.cos(tp), -math.sin(tp), 0.0], [math.sin(tp), math.cos(tp), 0.0], [0.0, 0.0, 1.0]])
+			M = np.array([[math.cos(t), -math.sin(t), 0.0], [math.sin(t), math.cos(t), 0.0], [0.0, 0.0, 1.0]])
 		elif vektor == 'y':
 			Mp = np.array([[math.cos(tp), 0.0, math.sin(tp)], [0.0, 1.0, 0.0], [-math.sin(tp), 0.0, math.cos(tp)]])
+			M = np.array([[math.cos(t), 0.0, math.sin(t)], [0.0, 1.0, 0.0], [-math.sin(t), 0.0, math.cos(t)]])
 		elif vektor == 'x':
 			Mp = np.array([[1.0 ,0.0, 0.0], [0.0, math.cos(tp), -math.sin(tp)], [0.0, math.sin(tp), math.cos(tp)]])
+			M = np.array([[1.0 ,0.0, 0.0], [0.0, math.cos(t), -math.sin(t)], [0.0, math.sin(t), math.cos(t)]])
 		for i in range(ANIRES) :
 			self.vertices[:] = matrixTransformation(self.vertices,Mp)
 			self.update()
+		self.vertices[:] = matrixTransformation(vertices1, M)
+		self.update()
 	
 	def reflect (self, inp) :
 		param = inp[1]
-		vertices1[:] = self.vertices
+		vertices1 = deepcopy(self.vertices)
 		if param == "x" :
 			Mp = np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]])
-			vertices2[:] = matrixTransformation(self.vertices,Mp)
+			vertices2 = matrixTransformation(self.vertices,Mp)
 		elif param == "y" :
 			Mp = np.array([[-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
-			vertices2[:] = matrixTransformation(self.vertices,Mp)
+			vertices2 = matrixTransformation(self.vertices,Mp)
 		elif param == "y=x" :
 			Mp = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
-			vertices2[:] = matrixTransformation(self.vertices,Mp)
+			vertices2 = matrixTransformation(self.vertices,Mp)
 		elif param == "y=-x" :
 			Mp = np.array([[0.0, -1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
-			vertices2[:] = matrixTransformation(self.vertices,Mp)
+			vertices2 = matrixTransformation(self.vertices,Mp)
 		else :
 			a = param.split(",")
 			x = a[0].split("(")
 			y = a[1].split(")")
-			p = float(x[0])
+			p = float(x[1])
 			q = float(y[0])
 			d = [p, q, 0.0]
-			Mp = np.array([-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0])
-			vertices2[:] = vectorTransformation(self.vertices,-d)
-			vertices2[:] = matrixTransformation(self.vertices,Mp)
-			vertices2[:] = vectorTransformation(self.vertices,d)
-		for i in range(ANIRES) :
+			di = [-p, -q, 0.0]
+			Mp = np.array([[-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]])
+			vertices2 = vectorTransformation(self.vertices,di)
+			vertices2 = matrixTransformation(vertices2,Mp)
+			vertices2 = vectorTransformation(vertices2,d)
+		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 		
 	
 	def stretch (self, inp) :
-		param = inp[1]
-		k = float(inp[2])
-		vertices1[:] = self.vertices
+		param = inp[2]
+		k = float(inp[1])
+		vertices1 = deepcopy(self.vertices)
 		if param == "x" :
 			Mp = np.array([[k, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 		elif param == "y" :
 			Mp = np.array([[1.0, 0.0, 0.0], [0.0, k, 0.0], [0.0, 0.0, 1.0]])
 		elif param == "z" :
 			Mp = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, k]])
-		vertices2[:] = matrixTransformation(self.vertices,Mp)
-		for i in range(ANIRES) :
+		vertices2 = matrixTransformation(self.vertices, Mp)
+		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 	
 	def custom (self, inp) :
-		param = inp[1]
-		a = float(inp[2])
-		b = float(inp[3])
-		c = float(inp[4])
-		d = float(inp[5])
-		vertices1[:] = self.vertices
+		a = float(inp[1])
+		b = float(inp[2])
+		c = float(inp[3])
+		d = float(inp[4])
+		vertices1 = deepcopy(self.vertices)
 		Mp = np.array([[a, b, 0.0], [c, d, 0.0], [0.0, 0.0, 1.0]])
-		vertices2[:] = matrixTransformation(self.vertices,Mp)
-		for i in range(ANIRES) :
+		vertices2 = matrixTransformation(self.vertices,Mp)
+		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
 
@@ -214,13 +219,29 @@ sbZ = Shape([[0.0, 0.0, 100.0],[0.0, 0.0, -100.0]], [[0, 1]])
 
 def main():
 	main_object = initiate()
+	main_object.update()
 	while True:
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-		
+		inp = input().split(" ")
+		if (inp[0] == 'translate'):
+			main_object.translate(inp)
+		elif (inp[0] == 'dilate'):
+			main_object.dilate(inp)
+		elif (inp[0] == 'rotate'):
+			main_object.rotate(inp)
+		elif (inp[0] == 'reflect'):
+			main_object.reflect(inp)
+		elif (inp[0] == 'stretch'):
+			main_object.stretch(inp)	
+		elif (inp[0] == 'custom'):
+			main_object.custom(inp)	
+		elif (inp[0] == 'exit'):
+			pygame.quit()
+			quit()
+
+		"""
 		for event in pygame.event.get():
 			pass
 
-		
 		if event.type == pygame.QUIT:
 			pygame.quit()
 			quit()
@@ -241,6 +262,7 @@ def main():
 			else:
 				pass
 		
+			
 		if ((event.type == KEYDOWN) and (event.key == K_l) ):
 			inp = input().split(" ")
 			if (inp[0] == 'translate'):
@@ -258,15 +280,14 @@ def main():
 			elif (inp[0] == 'exit'):
 				pygame.quit()
 				quit()
-
-			"""
+		"""
+		"""
 			while True:
 				for event in pygame.event.get():
 					pass
 				if (event.type == ACTIVEEVENT and event.gain == 1):
 					break	
-			"""
+		"""
 
 		main_object.update()
-
 main()
