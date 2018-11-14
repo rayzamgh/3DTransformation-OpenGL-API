@@ -365,6 +365,7 @@ sbZ = Shape([[0.0, 0.0, 100.0],[0.0, 0.0, -100.0]], [[0, 1]])
 def main():
 	main_object = initiate()
 	main_object.update()
+	vertices0 = deepcopy(main_object.vertices)
 	while True:
 		inp = input().split(" ")
 		if (inp[0] == 'translate'):
