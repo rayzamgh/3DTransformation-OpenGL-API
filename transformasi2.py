@@ -73,10 +73,32 @@ class Shape:
 			self.update()
 		
 	def rotate (self, inp) :
-		t = np.deg2rad(float(inp[1]))
 		vektor = str(inp[2])
+		t = np.deg2rad(float(inp[1]))
 		tp = t/ANIRES
 		vertices1 = deepcopy(self.vertices)
+		if (len(inp) == 4) :
+			a = inp[3].split(",")
+			if (len(a) == 3) :
+				x = a[0].split("(")
+				y = a[1]
+				z = a[2].split(")")
+				p = float(x[1])
+				q = float(y)
+				r = float(z[0])
+				d = np.array([p, q, r])
+				di = np.array([-p, -q, -r])				
+			elif (len(a) == 2) :
+				x = a[0].split("(")
+				y = a[1].split(")")
+				p = float(x[1])
+				q = float(y[0])
+				d = np.array([p, q, 0.0])
+				di = np.array([-p, -q, 0.0])
+		elif (len(inp) == 3) :
+			d = np.array([0.0, 0.0, 0.0])
+			di = np.array([0.0, 0.0, 0.0])
+		
 		if vektor == 'z':
 			Mp = np.array([[math.cos(tp), -math.sin(tp), 0.0], [math.sin(tp), math.cos(tp), 0.0], [0.0, 0.0, 1.0]])
 			M = np.array([[math.cos(t), -math.sin(t), 0.0], [math.sin(t), math.cos(t), 0.0], [0.0, 0.0, 1.0]])
@@ -86,11 +108,28 @@ class Shape:
 		elif vektor == 'x':
 			Mp = np.array([[1.0 ,0.0, 0.0], [0.0, math.cos(tp), -math.sin(tp)], [0.0, math.sin(tp), math.cos(tp)]])
 			M = np.array([[1.0 ,0.0, 0.0], [0.0, math.cos(t), -math.sin(t)], [0.0, math.sin(t), math.cos(t)]])
+		else :
+			a = vektor.split(",")
+			x = a[0].split("(")
+			y = a[1]
+			z = a[2].split(")")
+			us = np.array([float(x[1]), float(y), float(z[0])])
+			lus = math.sqrt(us[0]*us[0] + us[1]*us[1] + us[2]*us[2])
+			u = us/lus
+			M = np.array(	[[(math.cos(t)+(u[0]*u[0])*(1 - math.cos(t))), ((u[0]*u[1])*(1 - math.cos(t)) - u[2]*math.sin(t)), ((u[0]*u[2])*(1 - math.cos(t)) + u[1]*math.sin(t))],
+							[((u[1]*u[0])*(1 - math.cos(t)) + u[2]*math.sin(t)), (math.cos(t)+(u[1]*u[1])*(1 - math.cos(t))), ((u[1]*u[2])*(1 - math.cos(t)) - u[0]*math.sin(t))],
+							[((u[2]*u[0])*(1 - math.cos(t)) - u[1]*math.sin(t)), ((u[2]*u[1])*(1 - math.cos(t)) + u[0]*math.sin(t)), (math.cos(t)+(u[2]*u[2])*(1 - math.cos(t)))]])
+			Mp = np.array(	[[(math.cos(tp)+(u[0]*u[0])*(1 - math.cos(tp))), ((u[0]*u[1])*(1 - math.cos(tp)) - u[2]*math.sin(tp)), ((u[0]*u[2])*(1 - math.cos(tp)) + u[1]*math.sin(tp))],
+							[((u[1]*u[0])*(1 - math.cos(tp)) + u[2]*math.sin(tp)), (math.cos(tp)+(u[1]*u[1])*(1 - math.cos(tp))), ((u[1]*u[2])*(1 - math.cos(tp)) - u[0]*math.sin(tp))],
+							[((u[2]*u[0])*(1 - math.cos(tp)) - u[1]*math.sin(tp)), ((u[2]*u[1])*(1 - math.cos(tp)) + u[0]*math.sin(tp)), (math.cos(tp)+(u[2]*u[2])*(1 - math.cos(tp)))]])
+			
+		
 		for i in range(ANIRES) :
+			self.vertices[:] = vectorTransformation(self.vertices,di)
 			self.vertices[:] = matrixTransformation(self.vertices,Mp)
+			self.vertices[:] = vectorTransformation(self.vertices,d)
 			self.update()
-		self.vertices[:] = matrixTransformation(vertices1, M)
-		self.update()
+
 	
 	def reflect (self, inp) :
 		param = inp[1]
@@ -215,12 +254,11 @@ class Shape:
 			self.update()
 	
 	def custom (self, inp) :
-		a = float(inp[1])
-		b = float(inp[2])
-		c = float(inp[3])
-		d = float(inp[4])
+		if (len(inp) == 5) :
+			Mp = np.array([[float(inp[1]), float(inp[2]), 0.0], [float(inp[3]), float(inp[4]), 0.0], [0.0, 0.0, 1.0]])
+		elif (len(inp) == 10) :
+			Mp = np.array([[float(inp[1]), float(inp[2]), float(inp[3])], [float(inp[4]), float(inp[5]), float(inp[6])], [float(inp[7]), float(inp[8]), float(inp[9])]])
 		vertices1 = deepcopy(self.vertices)
-		Mp = np.array([[a, b, 0.0], [c, d, 0.0], [0.0, 0.0, 1.0]])
 		vertices2 = matrixTransformation(self.vertices,Mp)
 		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
