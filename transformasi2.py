@@ -47,6 +47,11 @@ class Shape:
 		pygame.display.flip()
 		pygame.time.wait(10)
 
+	def reset (self, vertices0) :
+		vertices1 = deepcopy(self.vertices)
+		for i in range(ANIRES + 1) :
+			self.vertices[:] = linearTransition(vertices1, vertices0, i*1.0/ANIRES)
+			self.update()
 
 	def translate (self, inp):
 		if len(inp) == 4 :	
@@ -272,18 +277,21 @@ def initiate():
 	pygame.display.set_caption("Tubes Algeo")
 	gluPerspective(45, (display[0]/display[1]), 0.1, 200.0)
 	glTranslatef(0.0, -3, -35.5)
-	glRotatef(45, 1, 1, 0)
-	glRotatef(15, -1, 0, 0)
+	#glRotatef(45, 1, 1, 0)
+	#glRotatef(15, -1, 0, 0)
 	"""MENERIMA INPUT USER"""
 	print("Welcome to 3D transformation simulator!")
 	print("Bentuk apakah yang ingin anda tampilkan?")
 	print("1. Kubus (3D)")
 	print("2. Persegi (2D)")
 	print("3. Custom (2D)")
+	print("4. Custom (2D) Lingkaran")
 
 
 	inp = int(input())
 	if (inp == 1):
+		glRotatef(45, 1, 1, 0)
+		glRotatef(15, -1, 0, 0)
 		main_object = Shape([[5.0, -5.0, -5.0],	[5.0, 5.0, -5.0],	[-5.0, 5.0, -5.0], [-5.0, -5.0, -5.0], 
 							[5.0, -5.0, 5.0], [5.0, 5.0, 5.0], [-5.0, -5.0, 5.0], [-5.0, 5.0, 5.0]], 
 							[[0, 1], [0, 3], [0, 4], [2, 1], [2, 3], [2, 7],
@@ -316,7 +324,31 @@ def initiate():
 			print(Vertices)
 			print(Vertex)
 		main_object = Shape(Vertices, Edges)
-	
+	elif (inp == 4):
+		Vertices = []
+		Edges = []
+		Edge = []
+		R = int(input("Masukkan R:"))
+		initial = [R, 0, 0]
+		Vertices = [[R,0,0]]
+		fake_object = Shape([[R, 0.0, 0.0], [0.0,0.0,0.0]],[[0,1]])
+		for i in range(36) :
+			Edge = []
+			Vertex = []
+			Edge.append(i)
+			if i == (35) :
+				Edge.append(0)
+			else :
+				Edge.append(int(i+1))
+			fake_object.rotate(['rotate', 10 , 'z']) 
+			Vertex.append(fake_object.vertices[0][0])
+			Vertex.append(fake_object.vertices[0][1])
+			Vertex.append(fake_object.vertices[0][2])
+			Vertices.append(Vertex) 
+			Edges.append(Edge)
+			print(Vertex)
+			print(Edge)
+		main_object = Shape(Vertices, Edges)
 	return main_object
 		
 def draw(main_object = Shape()):
@@ -340,11 +372,15 @@ def main():
 		elif (inp[0] == 'dilate'):
 			main_object.dilate(inp)
 		elif (inp[0] == 'rotate'):
+			if len(inp) == 2 :
+				inp.append('z')
 			main_object.rotate(inp)
 		elif (inp[0] == 'reflect'):
 			main_object.reflect(inp)
 		elif (inp[0] == 'stretch'):
-			main_object.stretch(inp)	
+			main_object.stretch(inp)
+		elif (inp[0] == 'reset'):
+			main_object.reset(vertices0)		
 		elif (inp[0] == 'custom'):
 			main_object.custom(inp)	
 		elif (inp[0] == 'projection'):
