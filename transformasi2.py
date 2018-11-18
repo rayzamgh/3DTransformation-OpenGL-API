@@ -40,16 +40,20 @@ class Shape:
 	
 
 	def update (self) :
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-		draw(sbX)
-		draw(sbY)
-		draw(sbZ)
-		draw(self)
-		pygame.display.flip()
-		pygame.time.wait(10)
+		global isMul
+		if not(isMul) :
+			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+			draw(sbX)
+			draw(sbY)
+			draw(sbZ)
+			draw(self)
+			pygame.display.flip()
+			pygame.time.wait(10)
 
 
 	def translate (self, inp):
+		global isMul
+		global loopMul
 		if len(inp) == 4 :	
 			dx = float(inp[1])
 			dy = float(inp[2])
@@ -63,8 +67,12 @@ class Shape:
 		for i in range(ANIRES) :
 			self.vertices[:] = vectorTransformation(self.vertices,dp)
 			self.update()
+		if (isMul) :
+			loopMul = loopMul - 1
 
 	def dilate (self, inp):
+		global isMul
+		global loopMul
 		k = float(inp[1])
 		Mp = np.array([[k, 0.0, 0.0], [0.0, k, 0.0], [0.0, 0.0, k]])
 		vertices1 = deepcopy(self.vertices)
@@ -72,8 +80,20 @@ class Shape:
 		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
+		if (isMul) :
+			loopMul = loopMul - 1
+
+	def multiple(self, inp):
+		global isMul
+		global loopMul
+		global mulVertices
+		mulVertices = deepcopy(self.vertices) 
+		isMul = True
+		loopMul = int(inp[1]) - 1
 		
 	def rotate (self, inp) :
+		global isMul
+		global loopMul
 		vektor = str(inp[2])
 		t = np.deg2rad(float(inp[1]))
 		tp = t/ANIRES
@@ -131,9 +151,13 @@ class Shape:
 			self.vertices[:] = vectorTransformation(self.vertices,d)	
 			if (pygameinit) :	
 				self.update()
+		if (isMul) :
+			loopMul = loopMul - 1
 
 	
 	def reflect (self, inp) :
+		global isMul
+		global loopMul
 		param = inp[1]
 		vertices1 = deepcopy(self.vertices)
 		if param == "x" :
@@ -186,9 +210,13 @@ class Shape:
 		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
+		if (isMul) :
+			loopMul = loopMul - 1
 		
 	
 	def orthodonalProjection (self, inp) :
+		global isMul
+		global loopMul
 		param = inp[1]
 		vertices1 = deepcopy(self.vertices)
 		if (param == "x-axis") :
@@ -212,8 +240,12 @@ class Shape:
 		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
+		if (isMul) :
+			loopMul = loopMul - 1
 
 	def shear (self, inp) :
+		global isMul
+		global loopMul
 		k = float(inp[1])
 		param = inp[2]
 		vertices1 = deepcopy(self.vertices)
@@ -238,6 +270,8 @@ class Shape:
 		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
+		if (isMul) :
+			loopMul = loopMul - 1
 
 	def reset(self, vertices0) :
 		vertices1 = deepcopy(self.vertices)
@@ -245,7 +279,16 @@ class Shape:
 			self.vertices[:] = linearTransition(vertices1,vertices0,i*1.0/ANIRES)
 			self.update()
 
+	def animul(self, mulVertices) :
+		vertices2 = deepcopy(self.vertices)
+		vertices1 = deepcopy(mulVertices)
+		for i in range(ANIRES + 1) :
+			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
+			self.update()
+
 	def stretch (self, inp) :
+		global isMul
+		global loopMul
 		param = inp[2]
 		k = float(inp[1])
 		vertices1 = deepcopy(self.vertices)
@@ -259,8 +302,12 @@ class Shape:
 		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
+		if (isMul) :
+			loopMul = loopMul - 1
 	
 	def custom (self, inp) :
+		global isMul
+		global loopMul
 		if (len(inp) == 5) :
 			Mp = np.array([[float(inp[1]), float(inp[2]), 0.0], [float(inp[3]), float(inp[4]), 0.0], [0.0, 0.0, 1.0]])
 		elif (len(inp) == 10) :
@@ -270,6 +317,8 @@ class Shape:
 		for i in range(ANIRES + 1) :
 			self.vertices[:] = linearTransition(vertices1,vertices2,i*1.0/ANIRES)
 			self.update()
+		if (isMul) :
+			loopMul = loopMul - 1
 
 
 def initiate():
@@ -418,6 +467,7 @@ def Console() :
 def GUI() :
 	initiatePygame()
 	global inp
+	global isMul
 	vertices0 = deepcopy(main_object.vertices) 
 	while True:
 		for event in pygame.event.get():
@@ -452,10 +502,15 @@ def GUI() :
 				pass
 			
 		if (len(inp) != 0) :
+			if ((isMul) and (loopMul == 0)):
+				isMul = False
+				main_object.animul(mulVertices)
 			if (inp[0] == 'translate'):
 				main_object.translate(inp)
 			elif (inp[0] == 'dilate'):
 				main_object.dilate(inp)
+			elif (inp[0] == 'multiple'):
+				main_object.multiple(inp)
 			elif (inp[0] == 'rotate'):
 				if len(inp) == 2 :
 					inp.append('z')
@@ -491,6 +546,8 @@ def GUI() :
 
 def main():
 	global main_object
+	global isMul
+	isMul = False
 	main_object = initiate()
 	gui = threading.Thread(target=GUI)
 	console = threading.Thread(target=Console)
